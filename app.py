@@ -11,12 +11,29 @@ CORS(app)
 
 STATE_FILE = "state.json"
 
+def default_state():
+    return {
+        "torreta1": "#000000",
+        "torreta2": "#000000",
+        "updated": ""
+    }
+
 def load_state():
     try:
         with open(STATE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            state = json.load(f)
+
+        # Compatibilidad por si existe un state viejo
+        if "torreta1" not in state:
+            state["torreta1"] = "#000000"
+        if "torreta2" not in state:
+            state["torreta2"] = "#000000"
+        if "updated" not in state:
+            state["updated"] = ""
+
+        return state
     except:
-        return {"color": "#7682CF", "count": 3, "updated": ""}
+        return default_state()
 
 def save_state(state):
     state["updated"] = datetime.now().isoformat(timespec="seconds")
@@ -30,15 +47,13 @@ def api_state():
 @app.route("/api/set", methods=["POST"])
 def api_set():
     data = request.get_json(force=True)
-    color = data.get("color", "#7682CF")
-    count = int(data.get("count", 0))
 
-    if count < 0: count = 0
-    if count > 1000: count = 1000
+    torreta1 = str(data.get("torreta1", "#000000")).upper()
+    torreta2 = str(data.get("torreta2", "#000000")).upper()
 
     state = load_state()
-    state["color"] = color
-    state["count"] = count
+    state["torreta1"] = torreta1
+    state["torreta2"] = torreta2
     save_state(state)
 
     return jsonify({"ok": True, "state": state})
